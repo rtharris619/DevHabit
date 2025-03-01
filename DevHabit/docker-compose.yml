@@ -8,8 +8,33 @@ services:
       - 6000:8080
       - 6001:8081
     environment:
+      # Seq
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://devhabit.seq:5341/ingest/otlp
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf 
+      # Aspire Dashboard
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://devhabit.aspire-dashboard:18889
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc 
+
+  devhabit.postgres:
+    image: postgres:17.2
+    environment:
+      POSTGRES_DB: devhabit
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./.containers/postgres_data:/var/lib/postgressql/data
+    ports:
+      - 5432:5432
+
+  # devhabit.seq:
+  #   image: datalust/seq:2024:3
+  #   environment:
+  #     ACCEPT_EULA: "Y"
+  #   volumes:
+  #     - ./.containers/seq_data:/data
+  #   ports:
+  #    - 8080:80
+  #    - 5341:5341
 
   devhabit.aspire-dashboard:
     image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
