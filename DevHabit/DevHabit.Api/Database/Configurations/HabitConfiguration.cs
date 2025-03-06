@@ -24,5 +24,10 @@ public sealed class HabitConfiguration : IEntityTypeConfiguration<Habit>
         });
 
         builder.OwnsOne(h => h.Milestone);
+
+        // For skip navigation property
+        builder.HasMany(h => h.Tags)
+            .WithMany()
+            .UsingEntity<HabitTag>();
     }
 }

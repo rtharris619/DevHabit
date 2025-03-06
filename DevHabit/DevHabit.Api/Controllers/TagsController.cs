@@ -51,6 +51,11 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     {
         Tag tag = dto.ToEntity();
 
+        if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name))
+        {
+            return Conflict($"The tag '{tag.Name}' already exists");
+        }
+
         dbContext.Tags.Add(tag);
 
         await dbContext.SaveChangesAsync();
