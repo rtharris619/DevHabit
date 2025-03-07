@@ -54,9 +54,21 @@ public sealed class HabitTagsController(ApplicationDbContext dbContext) : Contro
         return Ok();
     }
 
-    //[HttpDelete("{tagId}")]
-    //public async Task<ActionResult> DeleteHabitTag(string habitId, string tagId)
-    //{
-    //    return Ok();
-    //}
+    [HttpDelete("{tagId}")]
+    public async Task<ActionResult> DeleteHabitTag(string habitId, string tagId)
+    {
+        HabitTag? habitTag = await dbContext.HabitTags
+            .FirstOrDefaultAsync(ht => ht.HabitId == habitId && ht.TagId == tagId);
+
+        if (habitTag is null)
+        {
+            return NotFound();
+        }
+
+        dbContext.HabitTags.Remove(habitTag);
+
+        await dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
