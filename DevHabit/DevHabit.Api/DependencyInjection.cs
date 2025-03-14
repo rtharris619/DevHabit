@@ -169,6 +169,12 @@ public static class DependencyInjection
                     .Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             });
 
+        // Encryption
+
+        builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection("Encryption"));
+
+        builder.Services.AddTransient<EncryptionService>();
+
         return builder;
     }
 
