@@ -13,6 +13,7 @@ public sealed class Habit
     public bool IsArchived { get; set; }
     public DateOnly? EndDate { get; set; }
     public Milestone? Milestone { get; set; }
+    public AutomationSource? AutomationSource { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
     public DateTime? LastCompletedAtUtc { get; set; }
@@ -59,4 +60,9 @@ public sealed class Milestone
 {
     public int Target { get; set; }
     public int Current { get; set; }
+}
+
+public enum AutomationSource
+{
+    GitHub = 1
 }

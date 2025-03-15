@@ -2,5 +2,6 @@
 
 public sealed class EncryptionOptions
 {
+    public const string SectionName = "Encryption:Key";
     public required string Key { get; init; }
 }

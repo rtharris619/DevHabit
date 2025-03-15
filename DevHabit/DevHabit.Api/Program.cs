@@ -26,6 +26,7 @@ builder
     .AddObservability()
     .AddApplicationServices()
     .AddAuthenticationServices()
+    .AddBackgroundJobs()
     .AddCorsPolicy();
 
 WebApplication app = builder.Build();

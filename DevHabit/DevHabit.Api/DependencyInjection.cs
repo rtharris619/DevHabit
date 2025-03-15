@@ -24,6 +24,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Net.Http.Headers;
+using Quartz;
+using DevHabit.Api.Jobs;
 
 namespace DevHabit.Api;
 
@@ -171,9 +173,15 @@ public static class DependencyInjection
 
         // Encryption
 
-        builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection("Encryption"));
+        builder.Services.Configure<EncryptionOptions>
+            (builder.Configuration.GetSection(EncryptionOptions.SectionName));
 
         builder.Services.AddTransient<EncryptionService>();
+
+        // GitHub Automation
+
+        builder.Services.Configure<GitHubAutomationOptions>
+            (builder.Configuration.GetSection(GitHubAutomationOptions.SectionName));
 
         return builder;
     }
@@ -205,6 +213,33 @@ public static class DependencyInjection
             });
 
         builder.Services.AddAuthorization();
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddBackgroundJobs(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddQuartz(q =>
+        {
+            q.AddJob<GitHubAutomationSchedulerJob>(options => options.WithIdentity("github-automation-scheduler"));
+
+            q.AddTrigger(option => option
+                .ForJob("github-automation-scheduler")
+                .WithIdentity("github-automation-scheduler-trigger")
+                .WithSimpleSchedule(schedule =>
+                {
+                    GitHubAutomationOptions settings = builder.Configuration
+                        .GetSection(GitHubAutomationOptions.SectionName)
+                        .Get<GitHubAutomationOptions>()!;
+
+                    schedule.WithIntervalInMinutes(settings.ScanIntervalInMinutes)
+                        .RepeatForever();
+                })
+            );
+        });
+
+        builder.Services.AddQuartzHostedService(options =>
+            options.WaitForJobsToComplete = true);
 
         return builder;
     }
