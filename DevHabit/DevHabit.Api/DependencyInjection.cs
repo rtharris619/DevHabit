@@ -26,6 +26,7 @@ using System.Text;
 using System.Net.Http.Headers;
 using Quartz;
 using DevHabit.Api.Jobs;
+using DevHabit.Api.DTOs.Entries;
 
 namespace DevHabit.Api;
 
@@ -142,6 +143,9 @@ public static class DependencyInjection
 
         builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ =>
             HabitMappings.SortMapping);
+
+        builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<EntryDto, Entry>>(_ =>
+            EntryMappings.SortMapping);
 
         builder.Services.AddTransient<DataShapingService>();
 
