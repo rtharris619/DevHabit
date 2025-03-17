@@ -49,6 +49,8 @@ app.UseCors(CorsOptions.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseMiddleware<ETagMiddleware>();
+
 app.MapControllers();
 
 await app.RunAsync();
