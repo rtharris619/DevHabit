@@ -19,6 +19,7 @@
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
+	  <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
 	  <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
 	  <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
 	  <PackageReference Include="Npgsql.OpenTelemetry" />
@@ -28,6 +29,8 @@
 	  <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
 	  <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
 	  <PackageReference Include="Quartz.Extensions.Hosting" />
+	  <PackageReference Include="Refit.HttpClientFactory" />
+	  <PackageReference Include="Refit.Newtonsoft.Json" />
 	  <PackageReference Include="System.Linq.Dynamic.Core" />
   </ItemGroup>
 

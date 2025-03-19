@@ -27,6 +27,10 @@ using System.Net.Http.Headers;
 using Quartz;
 using DevHabit.Api.Jobs;
 using DevHabit.Api.DTOs.Entries;
+using Refit;
+using Polly;
+using Microsoft.Extensions.Http.Resilience;
+using DevHabit.Api.Extensions;
 
 namespace DevHabit.Api;
 
@@ -164,6 +168,11 @@ public static class DependencyInjection
         builder.Services.AddScoped<GitHubAccessTokenService>();
         builder.Services.AddTransient<GitHubService>();
 
+        // Global Resilience Handler
+        builder.Services.AddHttpClient().ConfigureHttpClientDefaults(b => b.AddStandardResilienceHandler());
+
+        builder.Services.AddTransient<RefitGitHubService>();
+
         builder.Services
             .AddHttpClient("github")
             .ConfigureHttpClient(client =>
@@ -176,6 +185,37 @@ public static class DependencyInjection
                 client.DefaultRequestHeaders
                     .Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             });
+
+        builder.Services
+            .AddRefitClient<IGitHubApi>(new RefitSettings
+            {
+                ContentSerializer = new NewtonsoftJsonContentSerializer()
+            })
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri("https://api.github.com"));
+        // Override the default global resilience handler
+        //.InternalRemoveAllResilienceHandlers()
+        //.AddResilienceHandler("custom", pipeline =>
+        //{
+        //    pipeline.AddTimeout(TimeSpan.FromSeconds(5));
+
+        //    pipeline.AddRetry(new HttpRetryStrategyOptions
+        //    {
+        //        MaxRetryAttempts = 3,
+        //        BackoffType = DelayBackoffType.Exponential,
+        //        UseJitter = true,
+        //        Delay = TimeSpan.FromSeconds(0.5)
+        //    });
+
+        //    pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+        //    {
+        //        SamplingDuration = TimeSpan.FromSeconds(10),
+        //        FailureRatio = 0.9,
+        //        MinimumThroughput = 5,
+        //        BreakDuration = TimeSpan.FromSeconds(5)
+        //    });
+
+        //    pipeline.AddTimeout(TimeSpan.FromSeconds(1));
+        //});
 
         // Encryption
 

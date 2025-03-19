@@ -12,7 +12,7 @@ namespace DevHabit.Api.Controllers;
 [Route("github")]
 public sealed class GitHubController(
     GitHubAccessTokenService gitHubAccessTokenService,
-    GitHubService gitHubService,
+    RefitGitHubService gitHubService,
     UserContext userContext,
     LinkService linkService) : ControllerBase
 {
