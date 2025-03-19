@@ -31,6 +31,8 @@ using Refit;
 using Polly;
 using Microsoft.Extensions.Http.Resilience;
 using DevHabit.Api.Extensions;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace DevHabit.Api;
 
@@ -171,7 +173,7 @@ public static class DependencyInjection
         // Global Resilience Handler
         builder.Services.AddHttpClient().ConfigureHttpClientDefaults(b => b.AddStandardResilienceHandler());
 
-        builder.Services.AddTransient<RefitGitHubService>();
+        //builder.Services.AddTransient<RefitGitHubService>();
 
         builder.Services
             .AddHttpClient("github")
@@ -186,12 +188,15 @@ public static class DependencyInjection
                     .Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             });
 
+        builder.Services.AddTransient<DelayHandler>();
+
         builder.Services
             .AddRefitClient<IGitHubApi>(new RefitSettings
             {
                 ContentSerializer = new NewtonsoftJsonContentSerializer()
             })
             .ConfigureHttpClient(client => client.BaseAddress = new Uri("https://api.github.com"));
+        //.AddHttpMessageHandler<DelayHandler>();
         // Override the default global resilience handler
         //.InternalRemoveAllResilienceHandlers()
         //.AddResilienceHandler("custom", pipeline =>
@@ -305,6 +310,66 @@ public static class DependencyInjection
                 policy.WithOrigins(corsOptions.AllowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
+            });
+        });
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.OnRejected = async (context, token) =>
+            {
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+                {
+                    context.HttpContext.Response.Headers.RetryAfter = $"{retryAfter.TotalSeconds}";
+
+                    ProblemDetailsFactory problemDetailsFactory = context.HttpContext.RequestServices
+                        .GetRequiredService<ProblemDetailsFactory>();
+
+                    Microsoft.AspNetCore.Mvc.ProblemDetails problemDetails = problemDetailsFactory
+                        .CreateProblemDetails(
+                            context.HttpContext,
+                            StatusCodes.Status429TooManyRequests,
+                            title: "Too Many Requests",
+                            detail: $"Too many requests. Please try again in {retryAfter.TotalSeconds} seconds.");
+
+                    await context.HttpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken: token);
+                }
+            };
+
+            options.AddPolicy("default", httpContext =>
+            {
+                //string identityId = httpContext.User.Identity?.Name ?? string.Empty; // TO TEST RATE LIMITING
+                string identityId = httpContext.User.GetIdentityId() ?? string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(identityId))
+                {
+                    return RateLimitPartition.GetTokenBucketLimiter(
+                        identityId,
+                        _ =>
+                            new TokenBucketRateLimiterOptions
+                            {
+                                TokenLimit = 100,
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 5,
+                                ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                                TokensPerPeriod = 25
+                            });
+                }
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    "anonymous",
+                    _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1)
+                    });
             });
         });
 
