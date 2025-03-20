@@ -15,10 +15,16 @@ public sealed class Entry
     public DateTime? UpdatedAtUtc { get; set; }
 
     public Habit Habit { get; set; }
+
+    public static string NewId()
+    {
+        return $"e_{Guid.CreateVersion7()}";
+    }
 }
 
 public enum EntrySource
 {
     Manual = 0,
-    Automation = 1
+    Automation = 1,
+    FileImport = 2,
 }
